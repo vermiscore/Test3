@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #1a3a2e 0%, #2d5f4d 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 10px;
+    }
+
+    .app-container {
+        width: 100%;
+        max-width: 500px;
+        height: 600px;
+        background: linear-gradient(135deg, #234d3f 0%, #2d6552 100%);
+        position: relative;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+
+    .panel {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: none;
+        background: linear-gradient(135deg, #234d3f 0%, #2d6552 100%);
+        overflow-y: auto;
+    }
+
+    .panel.active {
+        display: block;
+    }
+
+    .btn {
+        background: linear-gradient(135deg, #4a9d7f 0%, #3d8568 100%);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        background: linear-gradient(135deg, #5bb594 0%, #4a9d7f 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active {
+        background: linear-gradient(135deg, #3d8568 0%, #2d6552 100%);
+        transform: translateY(0);
+    }
+
+    #homeTitle {
+        position: absolute;
+        top: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #e8f5e9;
+        font-size: 32px;
+        font-weight: 700;
+        text-align: center;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .home-btn {
+        width: 100px;
+        height: 40px;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    #btnStart {
+        top: 150px;
+    }
+
+    #btnReset {
+        top: 200px;
+    }
+
+    #btnXOnly {
+        top: 250px;
+    }
+
+    #btnImport {
+        top: 300px;
+    }
+
+    /* New: Import info display on home panel */
+    #importInfo {
+        position: absolute;
+        top: 360px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 450px;
+        background: rgba(74, 157, 127, 0.2);
+        border: 1px solid #4a9d7f;
+        border-radius: 8px;
+        padding: 12px;
+        color: #c8e6c9;
+        font-size: 12px;
+        line-height: 1.6;
+        display: none;
+        text-align: left;
+    }
+
+    #importInfo.visible {
+        display: block;
+    }
+
+    #importInfo .info-title {
+        color: #e8f5e9;
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-size: 13px;
+    }
+
+    #importInfo .info-item {
+        margin: 3px 0;
+        padding-left: 8px;
+    }
+
+    #importPanel {
+        padding: 30px 20px 40px 20px;
+    }
+
+    .import-title {
+        text-align: center;
+        color: #e8f5e9;
+        padding-top: 10px;
+        margin-bottom: 15px;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .import-description {
+        text-align: center;
+        color: #c8e6c9;
+        font-size: 13px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+        padding: 0 10px;
+    }
+
+    .upload-box {
+        background: rgba(74, 157, 127, 0.2);
+        border: 2px dashed #4a9d7f;
+        border-radius: 12px;
+        padding: 25px;
+        text-align: center;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+
+    .upload-box:hover {
+        border-color: #5bb594;
+        background: rgba(74, 157, 127, 0.3);
+    }
+
+    .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .upload-button {
+        background: linear-gradient(135deg, #4a9d7f 0%, #3d8568 100%);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .upload-button:hover {
+        background: linear-gradient(135deg, #5bb594 0%, #4a9d7f 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .upload-button:active {
+        transform: scale(0.98);
+    }
+
+    .file-name {
+        color: #c8e6c9;
+        font-weight: 600;
+        margin-top: 12px;
+        font-size: 13px;
+        min-height: 20px;
+    }
+
+    #sheetSelector {
+        width: calc(100% - 40px);
+        max-width: 400px;
+        padding: 12px;
+        margin: 15px auto;
+        display: block;
+        font-size: 14px;
+        background: #2d5f4d;
+        color: #e8f5e9;
+        border: 2px solid #4a9d7f;
+        border-radius: 8px;
+    }
+
+    .range-selector {
+        width: calc(100% - 40px);
+        max-width: 400px;
+        margin: 15px auto;
+        padding: 15px;
+        background: rgba(74, 157, 127, 0.2);
+        border-radius: 8px;
+        display: none;
+    }
+
+    .range-selector.visible {
+        display: block;
+    }
+
+    .range-label {
+        color: #e8f5e9;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .range-inputs {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .range-inputs input {
+        width: 80px;
+        padding: 8px;
+        font-size: 14px;
+        background: #2d5f4d;
+        color: #e8f5e9;
+        border: 2px solid #4a9d7f;
+        border-radius: 6px;
+        text-align: center;
+    }
+
+    .range-inputs span {
+        color: #c8e6c9;
+        font-weight: 600;
+    }
+
+    .total-count {
+        color: #c8e6c9;
+        font-size: 12px;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    #importBtn {
+        display: block;
+        margin: 15px auto;
+        width: 200px;
+        height: 45px;
+        font-size: 16px;
+    }
+
+    #backBtn {
+        display: block;
+        margin: 15px auto 30px auto;
+        width: 150px;
+        height: 40px;
+    }
+
+    #importStatus {
+        text-align: center;
+        margin-top: 15px;
+        margin-bottom: 20px;
+        color: #c8e6c9;
+        font-weight: 500;
+        padding: 0 20px;
+        min-height: 24px;
+    }
+
+    #wordLabel {
+        position: absolute;
+        top: 40px;
+        left: 5%;
+        width: 90%;
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 22px;
+        font-weight: normal;
+        text-align: center;
+        color: #e8f5e9;
+        padding: 10px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #infoLabel {
+        position: absolute;
+        top: 200px;
+        left: 5%;
+        width: 90%;
+        max-height: 140px;
+        overflow-y: auto;
+        font-size: 15px;
+        text-align: center;
+        color: #c8e6c9;
+        white-space: pre-line;
+        padding: 10px;
+        line-height: 1.5;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .quiz-btn {
+        width: 90px;
+        height: 40px;
+        position: absolute;
+        font-size: 18px;
+        left: 50%;
+    }
+
+    #btnCorrect {
+        top: 300px;
+        transform: translateX(calc(-100% - 5px));
+    }
+
+    #btnWrong {
+        top: 300px;
+        transform: translateX(5px);
+    }
+
+    #btnNext {
+        top: 350px;
+        transform: translateX(calc(-100% - 5px));
+    }
+
+    #btnHome {
+        top: 350px;
+        transform: translateX(5px);
+    }
+
+    @media (max-width: 400px) {
+        .upload-box {
+            padding: 20px;
+        }
+
+        .upload-button {
+            padding: 10px 24px;
+            font-size: 13px;
+        }
+    }
+</style>
+
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Home Panel -->
+        <div id="homePanel" class="panel active">
+            <h1 id="homeTitle">Vocabulary App</h1>
+            <button id="btnStart" class="btn home-btn">Start</button>
+            <button id="btnReset" class="btn home-btn">Reset</button>
+            <button id="btnXOnly" class="btn home-btn">× Only</button>
+            <button id="btnImport" class="btn home-btn">Import</button>
+
+```
+        <!-- New: Import info display -->
+        <div id="importInfo">
+            <div class="info-title">Current Data:</div>
+            <div class="info-item" id="importInfoFile">File: -</div>
+            <div class="info-item" id="importInfoSheet">Sheet: -</div>
+            <div class="info-item" id="importInfoRange">Range: -</div>
+        </div>
+    </div>
+
+    <!-- Import Panel -->
+    <div id="importPanel" class="panel">
+        <h2 class="import-title">Import Excel File</h2>
+        <p class="import-description">Select an Excel file from your device</p>
+
+        <div class="upload-box">
+            <div class="file-input-wrapper">
+                <div class="upload-button">📁 Select File</div>
+                <input 
+                    type="file" 
+                    id="fileInput" 
+                    accept="image/*,video/*,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                />
+            </div>
+            <div class="file-name" id="fileName"></div>
+        </div>
+
+        <select id="sheetSelector" style="display: none;">
+            <option value="">Select a sheet</option>
+        </select>
+
+        <div id="rangeSelector" class="range-selector">
+            <div class="range-label">Select Question Range</div>
+            <div class="range-inputs">
+                <input type="number" id="rangeStart" min="1" value="1" />
+                <span>to</span>
+                <input type="number" id="rangeEnd" min="1" value="1" />
+            </div>
+            <div class="total-count" id="totalCount"></div>
+        </div>
+
+        <button id="importBtn" class="btn" style="display: none;">Load Selected Range</button>
+        <button id="backBtn" class="btn">Back</button>
+        <div id="importStatus"></div>
+    </div>
+
+    <!-- Quiz Panel -->
+    <div id="quizPanel" class="panel">
+        <div id="wordLabel"></div>
+        <div id="infoLabel"></div>
+        <button id="btnCorrect" class="btn quiz-btn">〇</button>
+        <button id="btnWrong" class="btn quiz-btn">×</button>
+        <button id="btnNext" class="btn quiz-btn">Next</button>
+        <button id="btnHome" class="btn quiz-btn">Home</button>
+    </div>
+</div>
+```
+
+<script>
+    let allWords = [
+        { word: "Apple", meaning: "りんご", example: "I like apples." },
+        { word: "Banana", meaning: "バナナ", example: "Bananas are yellow." },
+        { word: "Cat", meaning: "猫", example: "The cat is sleeping." },
+        { word: "Dog", meaning: "犬", example: "The dog is barking." },
+        { word: "House", meaning: "家", example: "This is my house." },
+        { word: "Book", meaning: "本", example: "I read a book." },
+        { word: "Water", meaning: "水", example: "Please drink water." },
+        { word: "Sun", meaning: "太陽", example: "The sun is bright." }
+    ];
+
+    let workbook = null;
+    let currentSheetData = null;
+    let currentFileName = '';
+
+    let state = {
+        remainingIdx: Array.from({ length: allWords.length }, (_, i) => i),
+        wrongWords: [],
+        correctWords: [],
+        currentWordIdx: -1,
+        xOnlyMode: false
+    };
+
+    // Import metadata storage
+    let importMetadata = {
+        fileName: '',
+        sheetName: '',
+        rangeStart: 0,
+        rangeEnd: 0
+    };
+
+    function loadVocabulary() {
+        const saved = localStorage.getItem('vocabData');
+        if (saved) {
+            allWords = JSON.parse(saved);
+            state.remainingIdx = Array.from({ length: allWords.length }, (_, i) => i);
+        }
+    }
+
+    function saveVocabulary() {
+        localStorage.setItem('vocabData', JSON.stringify(allWords));
+    }
+
+    function loadProgress() {
+        const saved = localStorage.getItem('vocabProgress');
+        if (saved) {
+            const data = JSON.parse(saved);
+            state.remainingIdx = data.remainingIdx || state.remainingIdx;
+            state.wrongWords = data.wrongWords || [];
+            state.correctWords = data.correctWords || [];
+        }
+    }
+
+    function saveProgress() {
+        localStorage.setItem('vocabProgress', JSON.stringify({
+            remainingIdx: state.remainingIdx,
+            wrongWords: state.wrongWords,
+            correctWords: state.correctWords
+        }));
+    }
+
+    function loadImportMetadata() {
+        const saved = localStorage.getItem('importMetadata');
+        if (saved) {
+            importMetadata = JSON.parse(saved);
+            updateImportInfoDisplay();
+        }
+    }
+
+    function saveImportMetadata() {
+        localStorage.setItem('importMetadata', JSON.stringify(importMetadata));
+        updateImportInfoDisplay();
+    }
+
+    function updateImportInfoDisplay() {
+        const importInfo = document.getElementById('importInfo');
+        const fileElem = document.getElementById('importInfoFile');
+        const sheetElem = document.getElementById('importInfoSheet');
+        const rangeElem = document.getElementById('importInfoRange');
+
+        if (importMetadata.fileName) {
+            importInfo.classList.add('visible');
+            fileElem.textContent = `File: ${importMetadata.fileName}`;
+            sheetElem.textContent = `Sheet: ${importMetadata.sheetName}`;
+            rangeElem.textContent = `Range: ${importMetadata.rangeStart} to ${importMetadata.rangeEnd}`;
+        } else {
+            importInfo.classList.remove('visible');
+        }
+    }
+
+    function updateRangeSelector(totalRows) {
+        const rangeStart = document.getElementById('rangeStart');
+        const rangeEnd = document.getElementById('rangeEnd');
+        const totalCount = document.getElementById('totalCount');
+
+        rangeStart.max = totalRows;
+        rangeEnd.max = totalRows;
+        rangeEnd.value = totalRows;
+
+        totalCount.textContent = `Total questions: ${totalRows}`;
+    }
+
+    function validateRange() {
+        const rangeStart = document.getElementById('rangeStart');
+        const rangeEnd = document.getElementById('rangeEnd');
+
+        const start = parseInt(rangeStart.value);
+        const end = parseInt(rangeEnd.value);
+
+        if (start > end) {
+            rangeStart.value = end;
+        }
+        if (end < start) {
+            rangeEnd.value = start;
+        }
+    }
+
+    document.getElementById('rangeStart').addEventListener('input', validateRange);
+    document.getElementById('rangeEnd').addEventListener('input', validateRange);
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        currentFileName = file.name;
+        document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+
+        // Check if it's an image or video file
+        if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+            document.getElementById('importStatus').textContent = 'Image and video files are not supported. Please select an Excel file (.xlsx or .xls).';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                workbook = XLSX.read(data, { type: 'array' });
+
+                const selector = document.getElementById('sheetSelector');
+                selector.innerHTML = '<option value="">Select a sheet</option>';
+                workbook.SheetNames.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    selector.appendChild(option);
+                });
+
+                selector.style.display = 'block';
+                document.getElementById('importStatus').textContent = 'File loaded. Select a sheet.';
+            } catch (error) {
+                document.getElementById('importStatus').textContent = 'Error reading file. Please select a valid Excel file.';
+                console.error('Error:', error);
+            }
+        };
+        
+        reader.onerror = function() {
+            document.getElementById('importStatus').textContent = 'Error reading file. Please try again.';
+        };
+        
+        reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('sheetSelector').addEventListener('change', function () {
+        const sheetName = this.value;
+        if (!sheetName) {
+            document.getElementById('rangeSelector').classList.remove('visible');
+            document.getElementById('importBtn').style.display = 'none';
+            return;
+        }
+
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        const validRows = jsonData.filter(row => row[0] && row[1]);
+        currentSheetData = validRows;
+
+        if (validRows.length === 0) {
+            document.getElementById('importStatus').textContent = 'No valid data found in sheet.';
+            document.getElementById('rangeSelector').classList.remove('visible');
+            document.getElementById('importBtn').style.display = 'none';
+            return;
+        }
+
+        updateRangeSelector(validRows.length);
+        document.getElementById('rangeSelector').classList.add('visible');
+        document.getElementById('importBtn').style.display = 'block';
+        document.getElementById('importStatus').textContent = '';
+    });
+
+    document.getElementById('importBtn').addEventListener('click', function () {
+        const sheetName = document.getElementById('sheetSelector').value;
+        if (!sheetName || !currentSheetData) {
+            document.getElementById('importStatus').textContent = 'Please select a sheet.';
+            return;
+        }
+
+        const rangeStart = parseInt(document.getElementById('rangeStart').value);
+        const rangeEnd = parseInt(document.getElementById('rangeEnd').value);
+
+        const selectedRows = currentSheetData.slice(rangeStart - 1, rangeEnd);
+
+        const newWords = selectedRows.map(row => ({
+            word: String(row[0]).trim(),
+            meaning: String(row[1]).trim(),
+            example: row[2] ? String(row[2]).trim() : ''
+        }));
+
+        if (newWords.length === 0) {
+            document.getElementById('importStatus').textContent = 'No valid data in selected range.';
+            return;
+        }
+
+        allWords = newWords;
+        state.remainingIdx = Array.from({ length: allWords.length }, (_, i) => i);
+        state.wrongWords = [];
+        state.correctWords = [];
+
+        // Update import metadata
+        importMetadata = {
+            fileName: currentFileName,
+            sheetName: sheetName,
+            rangeStart: rangeStart,
+            rangeEnd: rangeEnd
+        };
+
+        saveVocabulary();
+        saveProgress();
+        saveImportMetadata();
+
+        document.getElementById('importStatus').textContent = `Successfully imported ${newWords.length} words (${rangeStart} to ${rangeEnd})!`;
+
+        setTimeout(() => {
+            switchPanel('home');
+        }, 2000);
+    });
+
+    function showNextWord() {
+        const wordLabel = document.getElementById('wordLabel');
+        const infoLabel = document.getElementById('infoLabel');
+
+        if (state.xOnlyMode) {
+            if (state.wrongWords.length === 0) {
+                wordLabel.textContent = 'No more words!';
+                infoLabel.textContent = '(No "×" words)';
+                return;
+            }
+
+            const randomIdx = Math.floor(Math.random() * state.wrongWords.length);
+            state.currentWordIdx = state.wrongWords[randomIdx];
+        } else {
+            const possible = state.remainingIdx.filter(idx => !state.correctWords.includes(idx));
+
+            if (possible.length === 0) {
+                const fallback = Array.from({ length: allWords.length }, (_, i) => i)
+                    .filter(idx => !state.wrongWords.includes(idx) && !state.correctWords.includes(idx));
+
+                if (fallback.length === 0) {
+                    wordLabel.textContent = 'No more words!';
+                    infoLabel.textContent = '';
+                    return;
+                }
+
+                const randomIdx = Math.floor(Math.random() * fallback.length);
+                state.currentWordIdx = fallback[randomIdx];
+            } else {
+                const randomIdx = Math.floor(Math.random() * possible.length);
+                state.currentWordIdx = possible[randomIdx];
+            }
+        }
+
+        wordLabel.textContent = allWords[state.currentWordIdx].word;
+        infoLabel.textContent = '';
+    }
+
+    function revealInfo() {
+        const word = allWords[state.currentWordIdx];
+        const infoLabel = document.getElementById('infoLabel');
+        infoLabel.textContent = `Meaning: ${word.meaning}\nExample: ${word.example}`;
+    }
+
+    function markWrong() {
+        if (!state.wrongWords.includes(state.currentWordIdx)) {
+            state.wrongWords.push(state.currentWordIdx);
+        }
+        revealInfo();
+        saveProgress();
+    }
+
+    function markCorrect() {
+        if (!state.correctWords.includes(state.currentWordIdx)) {
+            state.correctWords.push(state.currentWordIdx);
+        }
+
+        const wrongIdx = state.wrongWords.indexOf(state.currentWordIdx);
+        if (wrongIdx !== -1) {
+            state.wrongWords.splice(wrongIdx, 1);
+        }
+
+        revealInfo();
+        saveProgress();
+    }
+
+    function resetCorrectWords() {
+        state.remainingIdx = Array.from(new Set([...state.remainingIdx, ...state.correctWords]));
+        state.correctWords = [];
+        state.xOnlyMode = false;
+        saveProgress();
+        showNextWord();
+    }
+
+    function switchPanel(panelName, xOnlyMode = false) {
+        const panels = ['homePanel', 'quizPanel', 'importPanel'];
+        panels.forEach(p => {
+            document.getElementById(p).classList.remove('active');
+        });
+
+        if (panelName === 'quiz') {
+            document.getElementById('quizPanel').classList.add('active');
+            state.xOnlyMode = xOnlyMode;
+            showNextWord();
+        } else if (panelName === 'import') {
+            const importPanel = document.getElementById('importPanel');
+            importPanel.classList.add('active');
+            importPanel.scrollTop = 0;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('sheetSelector').style.display = 'none';
+            document.getElementById('rangeSelector').classList.remove('visible');
+            document.getElementById('importBtn').style.display = 'none';
+            document.getElementById('importStatus').textContent = '';
+        } else {
+            document.getElementById('homePanel').classList.add('active');
+        }
+    }
+
+    document.querySelector('.upload-button').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('btnStart').addEventListener('click', () => switchPanel('quiz', false));
+    document.getElementById('btnReset').addEventListener('click', resetCorrectWords);
+    document.getElementById('btnXOnly').addEventListener('click', () => switchPanel('quiz', true));
+    document.getElementById('btnImport').addEventListener('click', () => switchPanel('import'));
+    document.getElementById('btnNext').addEventListener('click', showNextWord);
+    document.getElementById('btnCorrect').addEventListener('click', markCorrect);
+    document.getElementById('btnWrong').addEventListener('click', markWrong);
+    document.getElementById('btnHome').addEventListener('click', () => switchPanel('home'));
+    document.getElementById('backBtn').addEventListener('click', () => switchPanel('home'));
+
+    loadVocabulary();
+    loadProgress();
+    loadImportMetadata();
+</script>
+
+</body>
+</html>
